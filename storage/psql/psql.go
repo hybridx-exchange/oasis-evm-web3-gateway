@@ -16,7 +16,7 @@ type PostDB struct {
 	DB *pg.DB
 }
 
-// InitDb creates postgresql db instance.
+// InitDB creates postgresql db instance.
 func InitDB(cfg *conf.DatabaseConfig) (*PostDB, error) {
 	if cfg == nil {
 		return nil, errors.New("nil configuration")

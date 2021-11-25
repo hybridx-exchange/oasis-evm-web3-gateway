@@ -60,9 +60,7 @@ func NewRPCTransaction(dbTx *model.Transaction) (*RPCTransaction, error) {
 		resTx.From = common.HexToAddress(dbTx.FromAddr)
 	}
 
-	if len(dbTx.ToAddr) == 0 {
-		resTx.To = nil
-	} else {
+	if len(dbTx.ToAddr) > 0 {
 		to := common.HexToAddress(dbTx.ToAddr)
 		resTx.To = &to
 	}
@@ -136,6 +134,35 @@ func DB2EthLogs(dbLogs []*model.Log) []*ethtypes.Log {
 		}
 
 		res = append(res, ethLog)
+	}
+
+	return res
+}
+
+// Db2EthHeader converts block in db to ethereum header.
+func Db2EthHeader(block *model.Block) *ethtypes.Header {
+	v1 := big.NewInt(0)
+	diff, _ := v1.SetString(block.Header.Difficulty, 10)
+	noPrefix := block.Header.Bloom[2 : len(block.Header.Bloom)-1]
+	bloomData, _ := hex.DecodeString(noPrefix)
+	res := &ethtypes.Header{
+		ParentHash:  common.HexToHash(block.Header.ParentHash),
+		UncleHash:   common.HexToHash(block.Header.UncleHash),
+		Coinbase:    common.HexToAddress(block.Header.Coinbase),
+		Root:        common.HexToHash(block.Header.Root),
+		TxHash:      common.HexToHash(block.Header.TxHash),
+		ReceiptHash: common.HexToHash(block.Header.ReceiptHash),
+		Bloom:       ethtypes.BytesToBloom(bloomData),
+		Difficulty:  diff,
+		Number:      new(big.Int).SetUint64(block.Round),
+		GasLimit:    block.Header.GasLimit,
+		GasUsed:     block.Header.GasUsed,
+		Time:        block.Header.Time,
+		Extra:       []byte(block.Header.Extra),
+		MixDigest:   common.HexToHash(block.Header.MixDigest),
+		Nonce:       ethtypes.EncodeNonce(block.Header.Nonce),
+		// BaseFee was added by EIP-1559 and is ignored in legacy headers.
+		BaseFee: big.NewInt(0),
 	}
 
 	return res
